@@ -46,7 +46,7 @@ public class UserController {
 
     @ResponseBody
     @RequestMapping("/list")
-    public String list(@RequestParam(value = "p", required = true, defaultValue = "3")Integer pageNo) {
+    public String list(@RequestParam(value = "p", required = true, defaultValue = "")Integer pageNo) {
         return "UserController: list(" + pageNo + ")";
     }
 }
