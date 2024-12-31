@@ -1,7 +1,7 @@
-package guestbook03.controller;
+package guestbook.controller;
 
-import guestbook03.repository.GuestbookRepository;
-import guestbook03.vo.GuestbookVo;
+import guestbook.repository.GuestbookRepository;
+import guestbook.vo.GuestbookVo;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -18,7 +18,23 @@ public class GuestBookController {
     }
 
     @RequestMapping("/")
-    public String index(Model model) {
+    public String index(Model model
+//            , HttpServletRequest request
+    ) {
+//        ServletContext sc = request.getServletContext();
+//        Enumeration<String> en = sc.getAttributeNames();
+//
+//        while (en.hasMoreElements()) {
+//            String key = en.nextElement();
+//            System.out.println(key);
+//        }
+//        ApplicationContext ac1 = (ApplicationContext) sc.getAttribute("org.springframework.web.context.WebApplicationContext.ROOT");
+//        ApplicationContext ac2 = (ApplicationContext) sc.getAttribute("org.springframework.web.servlet.FrameworkServlet.CONTEXT.spring");
+//        GuestbookRepository repo1 = ac1.getBean(GuestbookRepository.class);
+//        System.out.println(repo1);
+//        GuestBookController repo2 = ac2.getBean(GuestBookController.class);
+//        System.out.println(repo2);
+
         model.addAttribute("guestbooks", guestbookRepository.findAll());
         return "index";
     }
