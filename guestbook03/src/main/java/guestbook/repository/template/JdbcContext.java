@@ -47,7 +47,7 @@ public class JdbcContext {
                 result.add(rowMapper.mapRow(rs, rs.getRow()));
             }
         } catch (SQLException e) {
-            System.out.println("SQLException: " + e.getMessage());
+            throw new RuntimeException(e);
         }
         return result;
     }
@@ -61,7 +61,7 @@ public class JdbcContext {
         ) {
             result = pstmt.executeUpdate();
         } catch (SQLException e) {
-            System.out.println("SQLException: " + e.getMessage());
+            throw new RuntimeException(e);
         }
         return result;
     }
