@@ -1,6 +1,6 @@
 package guestbook.controller;
 
-import guestbook.repository.GuestbookRepository;
+import guestbook.service.GuestbookService;
 import guestbook.vo.GuestbookVo;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -11,10 +11,10 @@ import org.springframework.web.bind.annotation.RequestParam;
 
 @Controller
 public class GuestBookController {
-    private final GuestbookRepository guestbookRepository;
+    private final GuestbookService guestbookService;
 
-    public GuestBookController(GuestbookRepository guestbookRepository) {
-        this.guestbookRepository = guestbookRepository;
+    public GuestBookController(GuestbookService guestbookService) {
+        this.guestbookService = guestbookService;
     }
 
     @RequestMapping("/")
@@ -35,13 +35,14 @@ public class GuestBookController {
 //        GuestBookController repo2 = ac2.getBean(GuestBookController.class);
 //        System.out.println(repo2);
 
-        model.addAttribute("guestbooks", guestbookRepository.findAll());
+        model.addAttribute("guestbooks", guestbookService.getContentsList());
         return "index";
     }
 
     @RequestMapping(value = "/add", method = RequestMethod.POST)
     public String add(GuestbookVo vo) {
-        guestbookRepository.insert(vo);
+//        guestbookRepository.insert(vo);
+        guestbookService.addContents(vo);
         return "redirect:/";
     }
 
@@ -53,7 +54,8 @@ public class GuestBookController {
 
     @RequestMapping(value = "/delete/{id}", method = RequestMethod.POST)
     public String delete(@PathVariable("id") Integer id, @RequestParam("password") String password) {
-        guestbookRepository.deleteByIdAndPassword(id,password);
+//        guestbookRepository.deleteByIdAndPassword(id,password);
+        guestbookService.deleteContents(id, password);
         return "redirect:/";
     }
 }

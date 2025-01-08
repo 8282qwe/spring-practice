@@ -1,6 +1,9 @@
 package guestbook.repository.template;
 
+import guestbook.vo.GuestbookVo;
+import org.springframework.jdbc.core.BeanPropertyRowMapper;
 import org.springframework.jdbc.core.RowMapper;
+import org.springframework.jdbc.datasource.DataSourceUtils;
 
 import javax.sql.DataSource;
 import java.sql.Connection;
@@ -17,7 +20,7 @@ public class JdbcContext {
         this.dataSource = dataSource;
     }
 
-    public <E> List<E> queryForList(String sql, RowMapper<E> rowMapper) {
+    public <E> List<E> query(String sql, RowMapper<E> rowMapper) {
         return queryForListWithStatementStrategy(new StatementStrategy() {
             @Override
             public PreparedStatement makeStatement(Connection connection) throws SQLException {
@@ -26,8 +29,21 @@ public class JdbcContext {
         }, rowMapper);
     }
 
-    public int excuteUpdate(String sql, Object... parameters) {
-        return excuteUpdateWithStatementStrategy(connection -> {
+    public <E> E queryForObject(String sql, Object[] objects, BeanPropertyRowMapper<GuestbookVo> rowMapper) {
+        return queryForObjectWithStatementStrategy(new StatementStrategy() {
+            @Override
+            public PreparedStatement makeStatement(Connection connection) throws SQLException {
+                PreparedStatement pstmt = connection.prepareStatement(sql);
+                for (int i = 0; i < objects.length; i++) {
+                    pstmt.setObject(i + 1, objects[i]);
+                }
+                return pstmt;
+            }
+        }, rowMapper);
+    }
+
+    public int update(String sql, Object... parameters) {
+        return UpdateWithStatementStrategy(connection -> {
             PreparedStatement pstmt = connection.prepareStatement(sql);
             for (int i = 0; i < parameters.length; i++) {
                 pstmt.setObject(i + 1, parameters[i]);
@@ -36,33 +52,93 @@ public class JdbcContext {
         });
     }
 
-    private <E> List<E> queryForListWithStatementStrategy(StatementStrategy statementStrategy,RowMapper<E> rowMapper) {
+    private <E> List<E> queryForListWithStatementStrategy(StatementStrategy statementStrategy, RowMapper<E> rowMapper) {
+        Connection connection = null;
+        PreparedStatement pstmt = null;
+        ResultSet rs = null;
         List<E> result = new ArrayList<>();
-        try (
-                Connection connection = dataSource.getConnection();
-                PreparedStatement pstmt = statementStrategy.makeStatement(connection);
-                ResultSet rs = pstmt.executeQuery();
-        ) {
+
+        try {
+            connection = DataSourceUtils.getConnection(dataSource);
+            pstmt = statementStrategy.makeStatement(connection);
+            rs = pstmt.executeQuery();
+
             while (rs.next()) {
                 result.add(rowMapper.mapRow(rs, rs.getRow()));
             }
         } catch (SQLException e) {
             throw new RuntimeException(e);
+        } finally {
+            try {
+                if (rs != null) {
+                    rs.close();
+                }
+                if (pstmt != null) {
+                    pstmt.close();
+                }
+                if (connection != null) {
+                    DataSourceUtils.releaseConnection(connection, dataSource);
+                }
+            } catch (SQLException ignore) {
+
+            }
         }
         return result;
     }
 
-    private int excuteUpdateWithStatementStrategy(StatementStrategy statementStrategy) {
-        int result = 0;
+    private int UpdateWithStatementStrategy(StatementStrategy statementStrategy) {
+        Connection connection = null;
+        PreparedStatement pstmt = null;
 
-        try (
-                Connection connection = dataSource.getConnection();
-                PreparedStatement pstmt = statementStrategy.makeStatement(connection)
-        ) {
-            result = pstmt.executeUpdate();
+        try {
+            connection = DataSourceUtils.getConnection(dataSource);
+            pstmt = statementStrategy.makeStatement(connection);
+
+            return pstmt.executeUpdate();
         } catch (SQLException e) {
             throw new RuntimeException(e);
+        } finally {
+            try {
+                if (pstmt != null) {
+                    pstmt.close();
+                }
+                if (connection != null) {
+                    DataSourceUtils.releaseConnection(connection, dataSource);
+                }
+            } catch (SQLException ignore) {
+            }
         }
-        return result;
+    }
+
+    private <E> E queryForObjectWithStatementStrategy(StatementStrategy statementStrategy, BeanPropertyRowMapper<GuestbookVo> rowMapper) {
+        Connection connection = null;
+        PreparedStatement pstmt = null;
+        ResultSet rs = null;
+        try {
+            connection = DataSourceUtils.getConnection(dataSource);
+            pstmt = statementStrategy.makeStatement(connection);
+            rs = pstmt.executeQuery();
+            if (rs.next()) {
+                return (E) rowMapper.mapRow(rs, rs.getRow());
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        } finally {
+            try {
+                if (rs != null) {
+                    rs.close();
+                }
+                if (pstmt != null) {
+                    pstmt.close();
+                }
+                if (connection != null) {
+                    DataSourceUtils.releaseConnection(connection, dataSource);
+                }
+            } catch (SQLException ignore) {
+
+            }
+
+        }
+        return null;
     }
 }
